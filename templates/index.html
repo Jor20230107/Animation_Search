@@ -1,9 +1,9 @@
 <!DOCTYPE html>
-<html lang="'en">
+<html lang="en">
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Product Recommendation</title>    
+    <title>Product Recommendation</title>
 </head>
 <body>
     <h1>Welcome to Product Recommendation Service</h1>
@@ -11,12 +11,12 @@
         <label for="user">Select User ID:</label>
         <select id="user" name="user">
             {% for user in users %}
-                <option value=""{{ user }}>{{ user }}</option>
+                <option value="{{ user }}">{{ user }}</option>
             {% endfor %}
         </select>
         <br>
         <input type="text" name="search_text" placeholder="Enter your search text">
-        <button type="submit">search</button>
+        <button type="submit">Search</button>
     </form>
 </body>
 </html>
