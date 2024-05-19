@@ -15,10 +15,24 @@ templates = Jinja2Templates(directory="templates")
 # 정적 파일 설정 (CSS, JS 등)
 app.mount("/static", StaticFiles(directory="static"), name="static")
 
+from dotenv import load_dotenv
+import os
+
+# .env 파일로부터 환경 변수 로드
+load_dotenv()
+
 # Elasticsearch 연결
-es = Elasticsearch([{'host': 'localhost', 'port': 9200,'scheme' : 'http' }],
-                   http_auth=('elastic','sRLpWutPELlL2mg23CAx'),
-                   verify_certs=False)
+es_host = 'localhost'
+es_port = 9200
+es_scheme = 'http'
+es_username = os.getenv('ELASTIC_USERNAME')
+es_password = os.getenv('ELASTIC_PASSWORD')
+
+es = Elasticsearch(
+    [{'host': es_host, 'port': es_port, 'scheme': es_scheme}],
+    http_auth=(es_username, es_password),
+    verify_certs=False
+)
 
 # 애니메이션 데이터
 animations  = pd.read_csv('D:/WebML/Recommender/data/anime_smpl.csv')
