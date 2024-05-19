@@ -115,3 +115,6 @@ animelist.csv는 1억 행...
 user_id는 unique 325770
 
 rating은 5700만
+
+elastic search를 써보기로!
+색인에 대해서 제대로 이해는 못했지만 써보자
