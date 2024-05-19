@@ -5,8 +5,15 @@ from fastapi.staticfiles import StaticFiles
 from starlette.requests import Request
 from elasticsearch import Elasticsearch, helpers
 import pandas as pd
+import json
 
 app = FastAPI()
+
+# 템플릿 디렉토리 설정
+templates = Jinja2Templates(directory="templates")
+
+# 정적 파일 설정 (CSS, JS 등)
+app.mount("/static", StaticFiles(directory="static"), name="static")
 
 # Elasticsearch 연결
 es = Elasticsearch([{'host': 'localhost', 'port': 9200,'scheme' : 'http' }],
@@ -15,7 +22,6 @@ es = Elasticsearch([{'host': 'localhost', 'port': 9200,'scheme' : 'http' }],
 
 # 애니메이션 데이터
 animations  = pd.read_csv('D:/WebML/Recommender/data/anime_smpl.csv')
-
 
 # ElasticSearch 인덱스 이름
 index_name = 'your_index_name'
@@ -39,35 +45,36 @@ if es.indices.exists(index=index_name):
     # ElasticSearch에 데이터 로드
     helpers.bulk(es, generate_elastic_data(animations))
 
-# 애니메이션 검색 엔드포인트
-@app.get("/search")
-async def search_animation(query: str = Query(None, min_length=1)):
-    # Elasticsearch 쿼리
-    es_query = {
-        "query": {
-            "match": {                
-                "Name": query
-            }
-        }
-    }
-    # Elasticsearch로 검색
-    es_result = es.search(index=index_name, body=es_query)
-    hits = es_result["hits"]["hits"]
-    results = [{"Name": hit["_source"]["Name"],"Genres": hit["_source"]["Genres"], "Score": hit["_source"]["Score"]} for hit in hits]
-    # results = sorted(results, key=lambda x: x['Score'], reverse=True)[:5]
-    return results
-
-# 추천 애니메이션 엔드포인트
-@app.get("/recommend")
-async def recommend_animation():
+# 메인 페이지
+@app.get("/", response_class=HTMLResponse)
+async def read_root(request: Request):
+    # 추천 애니메이션 가져오기
     es_result = es.search(index=index_name, body={"query": {"match_all": {}}})
     hits = es_result["hits"]["hits"]
-    # animations = [{"Name": hit["_source"]["Name"], "Score": hit["_source"]["Score"]} for hit in hits]
     animations = [{"Name": hit["_source"]["Name"],"Genres": hit["_source"]["Genres"], "Score": hit["_source"]["Score"]} for hit in hits]
     recommended = sorted(animations, key=lambda x: x['Score'], reverse=True)[:5]
-    return recommended
+    return templates.TemplateResponse("index.html", {"request": request, "recommended": recommended})
+
+# 애니메이션 검색 엔드포인트
+@app.get("/search", response_class=HTMLResponse)
+async def search_animation(request: Request, query: str = Query(None, min_length=1)):
+    if query:
+        # Elasticsearch 쿼리
+        es_query = {
+            "query": {
+                "match": {                
+                    "Name": query
+                }
+            }
+        }
+        # Elasticsearch로 검색
+        es_result = es.search(index=index_name, body=es_query)
+        hits = es_result["hits"]["hits"]
+        results = [{"Name": hit["_source"]["Name"],"Genres": hit["_source"]["Genres"], "Score": hit["_source"]["Score"]} for hit in hits]
+    else:
+        results = []
+    return templates.TemplateResponse("search_results.html", {"request": request, "results": results})
 
 if __name__ == '__main__':
-    
     import uvicorn
     uvicorn.run(app, host='127.0.0.1', port=8000)

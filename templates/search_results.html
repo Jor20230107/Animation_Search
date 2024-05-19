@@ -1,13 +1,11 @@
-<!DOCTYPE html>
-<html lang="en">
-<head>
-    <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Search Results</title>
-</head>
-<body>
-    <h1>Search Results for {{ user }}</h1>
-    <p>Search Text: {{ search_text }}</p>
-    <!-- 여기에 추천 상품을 표시하는 코드를 추가합니다. -->
-</body>
-</html>
+{% if results %}
+    {% for anime in results %}
+        <div class="anime">
+            <h2>{{ anime.Name }}</h2>
+            <p>Genres: {{ anime.Genres }}</p>
+            <p>Score: {{ anime.Score }}</p>
+        </div>
+    {% endfor %}
+{% else %}
+    <p>No results found.</p>
+{% endif %}

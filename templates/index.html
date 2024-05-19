@@ -3,20 +3,37 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Product Recommendation</title>
+    <title>Anime Recommendation</title>
+    <link rel="stylesheet" href="/static/style.css">
 </head>
 <body>
-    <h1>Welcome to Product Recommendation Service</h1>
-    <form action="/" method="post">
-        <label for="user">Select User ID:</label>
-        <select id="user" name="user">
-            {% for user in users %}
-                <option value="{{ user }}">{{ user }}</option>
-            {% endfor %}
-        </select>
-        <br>
-        <input type="text" name="search_text" placeholder="Enter your search text">
+    <h1>Recommended Anime</h1>
+    <div id="recommendations">
+        {% for anime in recommended %}
+            <div class="anime">
+                <h2>{{ anime.Name }}</h2>
+                <p>Genres: {{ anime.Genres }}</p>
+                <p>Score: {{ anime.Score }}</p>
+            </div>
+        {% endfor %}
+    </div>
+
+    <h2>Search for Anime</h2>
+    <form id="searchForm">
+        <input type="text" id="searchQuery" name="query" required>
         <button type="submit">Search</button>
     </form>
+    
+    <div id="searchResults"></div>
+    
+    <script>
+        document.getElementById('searchForm').addEventListener('submit', async function(event) {
+            event.preventDefault();
+            const query = document.getElementById('searchQuery').value;
+            const response = await fetch(`/search?query=${query}`);
+            const resultHtml = await response.text();
+            document.getElementById('searchResults').innerHTML = resultHtml;
+        });
+    </script>
 </body>
 </html>
