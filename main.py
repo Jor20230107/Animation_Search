@@ -37,19 +37,33 @@ es = Elasticsearch(
 # 애니메이션 데이터
 animations  = pd.read_csv('D:/WebML/Recommender/data/anime_smpl.csv')
 
-# ElasticSearch 인덱스 이름
-index_name = 'your_index_name'
+index_name = 'animations_index'
 
+# Elasticsearch에 애니메이션 인덱스 생성 및 데이터 색인화
 # 인덱스가 존재하는지 확인하고 존재하지 않으면 생성
 if es.indices.exists(index=index_name):
-    es.indices.delete(index=index_name)
-    es.indices.create(index=index_name)
+    # es.indices.delete(index=index_name)
+    es.indices.create(index=index_name, body={
+        "mappings": {
+            "properties": {
+                "Name": {"type": "text"},
+                "Genres": {"type": "nested", "properties": {"name": {"type": "text"}}},
+                "Score": {"type": "float"}
+            }
+        }
+    })
 
     # 데이터를 ElasticSearch에 인덱싱할 형식으로 변환
     def generate_elastic_data(df):
         for index, row in df.iterrows():
             # 각 row를 JSON 형식으로 변환
             doc = row.to_dict()
+            Genres = [{"name": genre.strip()} for genre in row['Genres'].split(",")]
+            doc = {
+                "Name" : row['Name'],
+                "Genres" : Genres,
+                "Score" : row['Score']
+            }
             # yield를 사용하여 데이터를 한 번에 메모리에 적재하지 않도록 함
             yield {
                 "_index": index_name,
