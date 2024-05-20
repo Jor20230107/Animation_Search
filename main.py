@@ -41,7 +41,7 @@ index_name = 'animations_index'
 
 # Elasticsearch에 애니메이션 인덱스 생성 및 데이터 색인화
 # 인덱스가 존재하는지 확인하고 존재하지 않으면 생성
-if es.indices.exists(index=index_name):
+if not es.indices.exists(index=index_name):
     # es.indices.delete(index=index_name)
     es.indices.create(index=index_name, body={
         "mappings": {
@@ -90,8 +90,20 @@ async def search_animation(request: Request, query: str = Query(None, min_length
         # Elasticsearch 쿼리
         es_query = {
             "query": {
-                "match": {                
-                    "Name": query
+                "bool": {
+                    "should": [
+                        {"match": {"Name": query}},
+                        {"nested": {
+                            "path": "Genres",
+                            "query": {
+                                "bool": {
+                                    "should": [
+                                        {"match": {"Genres.name": query}}
+                                    ]
+                                }
+                            }
+                        }}
+                    ]
                 }
             }
         }
@@ -99,6 +111,7 @@ async def search_animation(request: Request, query: str = Query(None, min_length
         es_result = es.search(index=index_name, body=es_query)
         hits = es_result["hits"]["hits"]
         results = [{"Name": hit["_source"]["Name"],"Genres": hit["_source"]["Genres"], "Score": hit["_source"]["Score"]} for hit in hits]
+        results = sorted(results, key=lambda x: x['Score'], reverse=True)[:5]
     else:
         results = []
     return templates.TemplateResponse("search_results.html", {"request": request, "results": results})

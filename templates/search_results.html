@@ -2,7 +2,11 @@
     {% for anime in results %}
         <div class="anime">
             <h2>{{ anime.Name }}</h2>
-            <p>Genres: {{ anime.Genres }}</p>
+            <p>
+                {% for genre in anime.Genres %}
+                    #{{ genre.name }}
+                {% endfor %}
+            </p>
             <p>Score: {{ anime.Score }}</p>
         </div>
     {% endfor %}
