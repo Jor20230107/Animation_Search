@@ -92,13 +92,13 @@ async def search_animation(request: Request, query: str = Query(None, min_length
             "query": {
                 "bool": {
                     "should": [
-                        {"match": {"Name": query}},
+                        {"prefix": {"Name": query}},
                         {"nested": {
                             "path": "Genres",
                             "query": {
                                 "bool": {
                                     "should": [
-                                        {"match": {"Genres.name": query}}
+                                        {"prefix": {"Genres.name": query}}
                                     ]
                                 }
                             }
