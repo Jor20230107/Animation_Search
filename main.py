@@ -68,10 +68,11 @@ else:
                 "Name": {"type": "text"},
                 "Genres": {"type": "nested", "properties": {"name": {"type": "text"}}},
                 "Score": {"type": "float"},
+                "Synopsis" : {"type": "text"},
                 "Embeddings": {
-                "type": "dense_vector",
-                "dims": 768 
-            }
+                    "type": "dense_vector",
+                    "dims": 768 
+                }
             }
         }
     })
@@ -83,9 +84,15 @@ else:
     print(f'# {len(animations)}개의 synopsis 작업중..')
     start_time = time.time()
     iterations = []
-    for i in animations['synopsis']:
+    for count, i in enumerate(animations['synopsis']):
         embeds = get_text_embedding(i)
         iterations.append(embeds)
+        if(len(animations)/4 == count):
+            print('--1/4 done--')
+        elif(len(animations)/2 == count):
+            print('--half done--')
+        elif(3*len(animations)/2 == count):
+            print('--3/4 done--')
     animations['text_vector'] = iterations
     end_time = time.time()
     execution_time = end_time - start_time
@@ -101,6 +108,7 @@ else:
                 "Name" : row['Name'],
                 "Genres" : Genres,
                 "Score" : row['Score'],
+                "Synopsis" : row['synopsis'],
                 "Embeddings" : row['text_vector']
             }
             # yield를 사용하여 데이터를 한 번에 메모리에 적재하지 않도록 함
@@ -111,6 +119,29 @@ else:
     
     # ElasticSearch에 데이터 로드
     helpers.bulk(es, generate_elastic_data(animations))
+
+def vector_search(embeddings):
+    query_embedding = embeddings
+    # Elasticsearch 벡터 검색 쿼리 생성
+    es_vector_query = {
+                "query": {
+                    "script_score": {
+                        "query": {"match_all": {}},
+                        "script": {
+                            "source": "cosineSimilarity(params.query_vector, 'Embeddings') + 1.0",
+                            "params": {"query_vector": query_embedding}
+                        }
+                    }
+                }
+            }
+            # Elasticsearch로 검색
+    vector_es_result = es.search(index=index_name, body=es_vector_query)
+    v_hits = vector_es_result["hits"]["hits"]
+    v_results = [{"Name": hit["_source"]["Name"],"Genres": hit["_source"]["Genres"], "Score": hit["_source"]["Score"]} for hit in v_hits]
+    v_results = v_results[:5]
+    return v_results
+    
+
 
 # 메인 페이지
 @app.get("/", response_class=HTMLResponse)
@@ -149,37 +180,22 @@ async def search_animation(request: Request, query: str = Query(None, min_length
         # Elasticsearch로 검색
         es_result = es.search(index=index_name, body=es_query)
         hits = es_result["hits"]["hits"]
-        results = [{"Name": hit["_source"]["Name"],"Genres": hit["_source"]["Genres"], "Score": hit["_source"]["Score"]} for hit in hits]
+        results = [{"Name": hit["_source"]["Name"],"Genres": hit["_source"]["Genres"], "Score": hit["_source"]["Score"], "Embeddings": hit["_source"]["Embeddings"] } for hit in hits]
         results = sorted(results, key=lambda x: x['Score'], reverse=True)[:5]
+        
+        if len(results)==1:
+            # print(top_result)
+            query_embedding = results[0]['Embeddings']
+            v_results = vector_search(query_embedding)
+            my_title = '검색하신 작품과 유사한 작품'
+        else:
+            query_embedding = get_text_embedding(query)
+            v_results = vector_search(query_embedding)
+            my_title = '검색어와 유관한 작품'                    
     else:
         results = []
-    return templates.TemplateResponse("search_results.html", {"request": request, "results": results})
+    return templates.TemplateResponse("search_results.html", {"request": request, "results": results, "v_results":v_results, "my_title" : my_title})
 
-# Elasticsearch 벡터 검색을 위한 엔드포인트
-@app.get("/vector_search", response_class=HTMLResponse)
-async def vector_search_animation(request: Request, query: str = Query(None, min_length=1)):
-    if query:
-        # 입력된 쿼리에 대한 벡터 생성
-        query_embedding = get_text_embedding(query)
-        # Elasticsearch 벡터 검색 쿼리 생성
-        es_vector_query = {
-            "query": {
-                "script_score": {
-                    "query": {"match_all": {}},
-                    "script": {
-                        "source": "cosineSimilarity(params.query_vector, 'Embeddings') + 1.0",
-                        "params": {"query_vector": query_embedding.tolist()}
-                    }
-                }
-            }
-        }
-        # Elasticsearch로 검색
-        es_result = es.search(index=index_name, body=es_vector_query)
-        hits = es_result["hits"]["hits"]
-        results = [{"Name": hit["_source"]["Name"], "Score": hit["_source"]["Score"]} for hit in hits]
-    else:
-        results = []
-    return templates.TemplateResponse("vector_search_results.html", {"request": request, "results": results})
 
 if __name__ == '__main__':
     import uvicorn

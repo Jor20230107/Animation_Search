@@ -1,15 +1,44 @@
-{% if results %}
-    {% for anime in results %}
-        <div class="anime">
-            <h2>{{ anime.Name }}</h2>
-            <p>
-                {% for genre in anime.Genres %}
-                    #{{ genre.name }}
-                {% endfor %}
-            </p>
-            <p>Score: {{ anime.Score }}</p>
+<!DOCTYPE html>
+<html lang="en">
+    <head>
+        <meta charset="UTF-8">
+        <meta name="viewport" content="width=device-width, initial-scale=1.0">
+        <title>Search Results</title>
+        <link rel="stylesheet" href="/static/style.css">
+    </head>
+<body>
+    {% if results %}
+        <h2>Search Results</h2>
+        <div id="searchResults">
+            {% for result in results %}
+                <div class="anime">
+                    <h2>{{ result.Name }}</h2>
+                    <p>
+                        {% for genre in result.Genres %}
+                            #{{ genre.name }}
+                        {% endfor %}
+                    </p>
+                    <p>Score: {{ result.Score }}</p>
+                </div>
+            {% endfor %}
         </div>
-    {% endfor %}
-{% else %}
-    <p>No results found.</p>
-{% endif %}
+    {% endif %}
+
+    {% if v_results %}
+        <h2>{{my_title}}</h2>
+        <div id="searchResults">
+            {% for result in v_results %}
+                <div class="anime">
+                    <h2>{{ result.Name }}</h2>
+                    <p>
+                        {% for genre in result.Genres %}
+                            #{{ genre.name }}
+                        {% endfor %}
+                    </p>
+                    <p>Score: {{ result.Score }}</p>
+                </div>
+            {% endfor %}
+        </div>
+    {% endif %}
+</body>
+</html>

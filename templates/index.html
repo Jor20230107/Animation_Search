@@ -12,7 +12,7 @@
         {% for anime in recommended %}
             <div class="anime">
                 <h2>{{ anime.Name }}</h2>
-                <p> 
+                <p>
                     {% for genre in anime.Genres %}
                         #{{ genre.name }}
                     {% endfor %}
@@ -30,13 +30,6 @@
     
     <div id="searchResults"></div>
     
-    <h2>Vector Search for Anime</h2>
-    <form id="vectorSearchForm">
-        <input type="text" id="vectorSearchQuery" name="query" required>
-        <button type="submit">Search</button>
-    </form>
-    
-    <div id="vectorSearchResults"></div>
     
     <script>
         document.getElementById('searchForm').addEventListener('submit', async function(event) {
@@ -45,15 +38,14 @@
             const response = await fetch(`/search?query=${query}`);
             const resultHtml = await response.text();
             document.getElementById('searchResults').innerHTML = resultHtml;
+
+            // Search result redirection
+            const topResultScript = document.querySelector('#searchResults script');
+            if (topResultScript) {
+                eval(topResultScript.text);
+            }
         });
 
-        document.getElementById('vectorSearchForm').addEventListener('submit', async function(event) {
-            event.preventDefault();
-            const query = document.getElementById('vectorSearchQuery').value;
-            const response = await fetch(`/vector_search?query=${query}`);
-            const resultHtml = await response.text();
-            document.getElementById('vectorSearchResults').innerHTML = resultHtml;
-        });
     </script>
 </body>
 </html>

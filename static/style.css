@@ -10,9 +10,22 @@ h1, h2 {
 .anime {
     border: 1px solid #ddd;
     padding: 10px;
-    margin: 10px 0;
+    margin: 10px 10px 10px 0; /* 요소들 간의 간격을 설정 */
+    display: inline-block; /* 추가: 요소를 가로로 배치 */
+    width: calc(33.33% - 20px); /* 추가: 요소의 너비 설정 (세로 여백 제외) */
+    box-sizing: border-box; /* 추가: padding과 border가 요소의 크기에 포함되도록 설정 */
+    vertical-align: top; /* 추가: 요소의 상단을 맞춤 */
+    white-space: nowrap;
+    overflow: auto;
 }
+
 
 #recommendations, #searchResults {
     margin-top: 20px;
+}
+
+@media (max-width: 768px) {
+    .anime {
+        width: 45%;
+    }
 }
