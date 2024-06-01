@@ -7,9 +7,25 @@
     <link rel="stylesheet" href="/static/style.css">
 </head>
 <body>
+    <h1><div id="user_id">user_id : {{user_id}}</h1>
     <h1>Recommended Anime</h1>
     <div id="recommendations">
         {% for anime in recommended %}
+            <div class="anime">
+                <h2>{{ anime.Name }}</h2>
+                <p>
+                    {% for genre in anime.Genres %}
+                        #{{ genre.name }}
+                    {% endfor %}
+                </p>
+                <p>Score: {{ anime.Score }}</p>
+            </div>
+        {% endfor %}
+    </div>
+
+    <h1>Watching Anime</h1>
+    <div id="watching">
+        {% for anime in watching %}
             <div class="anime">
                 <h2>{{ anime.Name }}</h2>
                 <p>

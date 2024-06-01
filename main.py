@@ -65,6 +65,7 @@ else:
     es.indices.create(index=index_name, body={
         "mappings": {
             "properties": {
+                "anime_id": {"type": "integer"},
                 "Name": {"type": "text"},
                 "Genres": {"type": "nested", "properties": {"name": {"type": "text"}}},
                 "Score": {"type": "float"},
@@ -105,6 +106,7 @@ else:
             doc = row.to_dict()
             Genres = [{"name": genre.strip()} for genre in row['Genres'].split(",")]
             doc = {
+                "anime_id" : row['anime_id'],
                 "Name" : row['Name'],
                 "Genres" : Genres,
                 "Score" : row['Score'],
@@ -118,7 +120,28 @@ else:
             }
     
     # ElasticSearch에 데이터 로드
-    helpers.bulk(es, generate_elastic_data(animations))
+    helpers.bulk(es, generate_elastic_data(animations), chunk_size=100, request_timeout=200)
+
+
+current_user_id = 0
+
+""" watching_status
+1   Currently Watching
+2   Completed
+3   On Hold
+4   Dropped
+5   Plan to Watch
+"""
+
+def search_status(this_user_id):    
+    animelist = pd.read_csv('D:/WebML/Recommender/data/wc_list.csv')    
+    Myanimelist = animelist[animelist['user_id']==this_user_id]
+    watching = Myanimelist['watching'].iloc[0].split(',')
+    watched = Myanimelist['completed'].iloc[0].split(',')
+    return watching, watched
+
+current_user_watching_list, current_user_complete_list = search_status(current_user_id)
+all_list = list(set(current_user_complete_list + current_user_watching_list))
 
 def vector_search(embeddings):
     query_embedding = embeddings
@@ -147,11 +170,35 @@ def vector_search(embeddings):
 @app.get("/", response_class=HTMLResponse)
 async def read_root(request: Request):
     # 추천 애니메이션 가져오기
+    print(index_name)
     es_result = es.search(index=index_name, body={"query": {"match_all": {}}})
     hits = es_result["hits"]["hits"]
-    animations = [{"Name": hit["_source"]["Name"],"Genres": hit["_source"]["Genres"], "Score": hit["_source"]["Score"]} for hit in hits]
-    recommended = sorted(animations, key=lambda x: x['Score'], reverse=True)[:5]
-    return templates.TemplateResponse("index.html", {"request": request, "recommended": recommended})
+    # print(hits[0])
+    animations = [{"anime_id": hit["_source"]["anime_id"],"Name": hit["_source"]["Name"],"Genres": hit["_source"]["Genres"], "Score": hit["_source"]["Score"]} for hit in hits]
+    
+    filtered = []
+    for result in animations:
+        if str(result.get('anime_id')) not in all_list:
+            filtered.append(result)
+    recommended = sorted(filtered, key=lambda x: x['Score'], reverse=True)[:5]
+    # watching
+    es_query = {
+        "query":{
+            "bool":{
+                "must":{
+                    "terms":{
+                        "anime_id":current_user_watching_list
+                    }
+                }
+            }
+        }
+    }
+    watching_result = es.search(index=index_name, body=es_query)
+    w_hits = watching_result["hits"]["hits"]
+    # print(w_hits[0])
+    watching = [{"anime_id": hit["_source"]["anime_id"],"Name": hit["_source"]["Name"],"Genres": hit["_source"]["Genres"], "Score": hit["_source"]["Score"]} for hit in w_hits]
+    watching = sorted(watching, key=lambda x: x['Score'], reverse=True)[:5]
+    return templates.TemplateResponse("index.html", {"request": request, "recommended": recommended, "watching": watching, "user_id":current_user_id})
 
 # 애니메이션 검색 엔드포인트
 @app.get("/search", response_class=HTMLResponse)
@@ -180,11 +227,15 @@ async def search_animation(request: Request, query: str = Query(None, min_length
         # Elasticsearch로 검색
         es_result = es.search(index=index_name, body=es_query)
         hits = es_result["hits"]["hits"]
-        results = [{"Name": hit["_source"]["Name"],"Genres": hit["_source"]["Genres"], "Score": hit["_source"]["Score"], "Embeddings": hit["_source"]["Embeddings"] } for hit in hits]
-        results = sorted(results, key=lambda x: x['Score'], reverse=True)[:5]
+        results = [{"anime_id": hit["_source"]["anime_id"],"Name": hit["_source"]["Name"],"Genres": hit["_source"]["Genres"], "Score": hit["_source"]["Score"], "Embeddings": hit["_source"]["Embeddings"] } for hit in hits]
+        # check complete
+        filtered = []        
+        for result in results:
+            if str(result.get('anime_id')) not in all_list:                
+                filtered.append(result)
+        filtered = sorted(filtered, key=lambda x: x['Score'], reverse=True)[:5]
         
-        if len(results)==1:
-            # print(top_result)
+        if len(filtered)==1:            
             query_embedding = results[0]['Embeddings']
             v_results = vector_search(query_embedding)
             my_title = '검색하신 작품과 유사한 작품'
@@ -194,7 +245,7 @@ async def search_animation(request: Request, query: str = Query(None, min_length
             my_title = '검색어와 유관한 작품'                    
     else:
         results = []
-    return templates.TemplateResponse("search_results.html", {"request": request, "results": results, "v_results":v_results, "my_title" : my_title})
+    return templates.TemplateResponse("search_results.html", {"request": request, "results": filtered, "v_results":v_results, "my_title" : my_title})
 
 
 if __name__ == '__main__':

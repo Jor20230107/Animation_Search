@@ -1,3 +1,47 @@
+### 2024-06-01
+
+- 신규 index 생성
+    - animelist
+    - rating complete
+- 추천 모델
+    - elastic search를 통한 로직 구현
+        - currently watching list
+            - animelist에서 뽑아온다
+        - Complete list 뽑아와서 추천로직에서 제외
+        - 
+    - ML
+        - Content-based recommendation
+        - Collaborative Filtering
+            - 기대하는 학습데이터의 형태가 animelist와 rating complete의 combine 형태임
+            - 어차피 모델학습이 이뤄지고나면, 주기단위로 관리하면됨
+            - 전처리를 통해  학습 테이블을 만들고, 그 코드를 스케쥴링
+- 용량과 효율성의 문제를 고려못함
+    - 이후 활용을 고려하더라도 현 animelist (1.9GB)를 통으로 index화 할 필요는 없었음
+    - 차라리 전처리를 통해서
+    - user_id watchinglist watchedlist로 table을 갖고있는게 낫다
+
+- 결과
+    - animelist 전처리로 watching, complete list만 별도 추출 → csv로 저장
+    - current_user_id에 따른 watching, complete list 생성
+    - watchinglist를 보여주고, 추천, 검색 list에서 complete, watchinglist는 제외 로직 적용
+
+### 2024-05-27
+
+- 개발 기획
+    - 개인화 추천, 검색을 위한 신규 index 생성
+        - animelist
+        - rating complete
+    - 화면 반영
+        - user id 선택 기능
+    - 신규 로직 반영
+        - currently watching list
+            - 시간 정보는 없음 sorting 무슨 순서로?
+        - On Hold list
+        - Plan to Watch
+        - 추천, 검색에서 Completed list 제외
+- ML 추천 모델 고민
+
+
 ### 2024-05-26
 
 - 벡터검색을 별도로 작업을 했으나,
