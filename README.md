@@ -1,5 +1,8 @@
 # Animation 검색 시스템
 
+![recording](https://github.com/Jor20230107/Animation_Search/assets/122156670/fefa2f17-3d6e-4c5f-9e30-befdd9f67b17)
+
+
 ## 검색 시스템
 
 elastic search 검색 시스템
