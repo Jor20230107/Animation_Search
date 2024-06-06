@@ -40,13 +40,14 @@ es = Elasticsearch(
 
 # current user 기준 get top anime, watchinglist, completelist 
 # rating_matrix의 용량이 커서 embedding model load 전에 실행
+# max_rating은 안크니까 내려도 되지 않을까
 current_user_id = 0
 
 def get_top_anime(this_user_id):
     # print("터질지도 모릅니다.")
     import numpy as np
-    ratings_matrix = np.load('D:/WebML/Recommender/data/ratings_matrix.npy', mmap_mode='r')    
-    top_anime = np.argmax(ratings_matrix[this_user_id])
+    max_rating = np.load('D:/WebML/Recommender/data/max_rating_per_user.npy', mmap_mode='r')    
+    top_anime = np.argmax(max_rating[this_user_id])
     # print("다행히 안터졌습니다.")
     
     return top_anime    

@@ -1,3 +1,19 @@
+### 2024-06-06
+
+- ALS, Pyspark 서칭 및 도입 검토
+    - pyspark는 애초에 hivesql을 db로 쓸때 활용도가 높을 것 같은데.. sql 쿼리를 위해 써야하나?
+    - 단순히 pyspark를 써서 더 빠른지..? 의문
+    - ALS 전에 일단 user*item 행렬을 만드는 것 자체가 문제
+        - ALS 확인해보니 gradient descend와 대비되는 개념이었고..
+        - 결국 matrix factorization이었
+    - colab에서 무료로 12.7GB RAM을 제공하는데, 이걸로 안될까?
+    - 로컬은 16GB여도 다른게 많이 잡아먹으니까..
+    - 해당 행렬이 필요없는 추천로직이나 모델 검토?
+- 행렬 만드는거 colab에서 해보고 안되면 npc 설계로 넘어가
+    - 안됨. session이 끊김.
+    - 애초에 이정도면 matrix factorization도 구현 불가능할 것으로 보임
+    - 현 컴퓨팅 파워 환경에서는 여기서 1차 마감하는 것으로
+
 ### 2024-06-02
 
 - 추천 모델
